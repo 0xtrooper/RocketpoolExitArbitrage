@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+const MAX_TIP_WEI = 5e9
+
 func VerifyInputData(ctx context.Context, logger *slog.Logger, dataIn *DataIn) error {
 	logger.With(slog.String("function", "VerifyInputData"))
 
@@ -24,7 +26,7 @@ func VerifyInputData(ctx context.Context, logger *slog.Logger, dataIn *DataIn) e
 		}
 		// make sure tip is somewhat reasonable, eg not have users confuse Gwei with wei
 		// Limit is set to 5 Gwei
-		if dataIn.TipOverwrite.Cmp(big.NewInt(5e9)) > 0 {
+		if dataIn.TipOverwrite.Cmp(big.NewInt(MAX_TIP)) > 0 {
 			return errors.New("tip is too high, please use a lower value")
 		}
 	}
