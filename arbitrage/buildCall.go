@@ -165,7 +165,7 @@ func BuildCall(ctx context.Context, logger *slog.Logger, dataIn DataIn) (*flashb
 		return nil, nil, errors.Join(errors.New("failed to generate distribute calls"), err)
 	}
 
-	uniswapData, paraswapData, err := CalcualteArbitrageData(
+	uniswapData, paraswapData, err := CalculateArbitrageData(
 		ctx,
 		logger,
 		dataIn.Client,
@@ -396,7 +396,7 @@ func CalcaulteDistributedBalance(ctx context.Context, logger *slog.Logger, clien
 	return totalDistributeAmount, nil
 }
 
-func CalcualteArbitrageData(
+func CalculateArbitrageData(
 	ctx context.Context,
 	logger *slog.Logger,
 	client *ethclient.Client,
