@@ -152,7 +152,7 @@ func ExecuteDistribute(ctx context.Context, logger *slog.Logger, dataIn *DataIn)
 			fmt.Printf("    Value: %s\n", tx.Value().String())
 			fmt.Printf("    Gas Limit: %d\n", tx.Gas())
 			fmt.Printf("    Base Fee: %s (%.4f Gwei)\n", tx.GasFeeCap().String(), baseGwei)
-			fmt.Printf("    Priority Fee: %s (%.4f Gwei)\n", tx.GasTipCap().String(), tipGwei)
+			fmt.Printf("    Priority Fee: %s (%.6f Gwei)\n", tx.GasTipCap().String(), tipGwei)
 			fmt.Printf("    Nonce: %d\n", tx.Nonce())
 			fmt.Printf("    Data: %s\n", hex.EncodeToString(tx.Data()))
 		}
