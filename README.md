@@ -523,6 +523,18 @@ Notice: When using a free RPC connection, consider setting a rate limit to avoid
 
 ---
 
+
+## Tip Overwrite
+
+- **Flag**: `--tip-overwrite`  
+    **Type**: float64  
+    **Default**: `0.0`  
+    **Description**: Override the tip (priority fee per gas, in Gwei) for the Flashbots bundle. If not set, the default tip is used. Use this flag to manually specify a different tip for bundle inclusion.  
+    **Example**:
+    ```bash
+    ./distribute --tip-overwrite=0.02
+    ```
+
 ## Combining Flags
 
 You can combine multiple flags in a single command. For example:

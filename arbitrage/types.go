@@ -36,6 +36,7 @@ type DataIn struct {
 	Ratelimit                       int
 	Protocol                        Protocol
 	NetworkId                       uint64
+	TipOverwrite                    *big.Int
 }
 
 type UniswapArbitrage struct {

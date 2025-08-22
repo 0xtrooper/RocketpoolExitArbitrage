@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
+	"math/big"
 	"rocketpoolArbitrage/arbitrage"
 	"strings"
 
@@ -60,6 +61,7 @@ func parseInput(ctx context.Context, logger *slog.Logger) (data *arbitrage.DataI
 	nodeAddressFlag := flag.String("node-address", "", "Node address used as caller. If not set, the first minipool's node address is used.")
 	protocolFlag := flag.String("protocol", "best", "Protocol to use for arbitrage. Options: best, uniswap, paraswap")
 	receiverFlag := flag.String("receiver", "", "Receiver address for the arbitrage. If not set, the node address is used.")
+	tipOverwriteFlag := flag.Float64("tip-overwrite", 0.0, "Override the tip for the Flashbots bundle. If not set, the default tip is used.")
 	nodeAddressPrivateKey := flag.String(
 		"node-private-key",
 		"",
@@ -219,6 +221,19 @@ func parseInput(ctx context.Context, logger *slog.Logger) (data *arbitrage.DataI
 		receiverAddress := common.HexToAddress(*receiverFlag)
 		data.ReceiverAddress = &receiverAddress
 		logger.Debug("receiverAddress", slog.String("receiverAddress", receiverAddress.Hex()))
+	}
+
+	if *tipOverwriteFlag > 0.0 {
+		// tip overwrite is in gwei, convert to wei
+		tipOverwrite := int64(*tipOverwriteFlag * float64(1e9))
+		data.TipOverwrite = new(big.Int).SetInt64(tipOverwrite)
+		logger.Debug("tipOverwrite",
+			slog.Float64("tipOverwriteGwei", *tipOverwriteFlag),
+			slog.Int64("tipOverwriteWei", data.TipOverwrite.Int64()),
+		)
+	} else {
+		data.TipOverwrite = nil
+		logger.Debug("tipOverwrite is not set")
 	}
 
 	// overwrite this as local reth does not generate profit
