@@ -51,8 +51,8 @@ func BuildCallLocalReth(ctx context.Context, logger *slog.Logger, dataIn DataIn)
 		tipGasFloat, _ := new(big.Float).Quo(new(big.Float).SetInt(tipGas), new(big.Float).SetInt(big.NewInt(1e9))).Float64()
 		baseGasBoostedFloat, _ := new(big.Float).Quo(new(big.Float).SetInt(baseGasBoosted), new(big.Float).SetInt(big.NewInt(1e9))).Float64()
 
-		fmt.Printf("Current gas settings: base fee per gas is %.2f gwei, tip is %.2f gwei.\n", baseGasFloat, tipGasFloat)
-		fmt.Printf("Sending transaction with a base fee per gas of %.2f gwei for timely inclusion.\n\n", baseGasBoostedFloat)
+		fmt.Printf("Current gas settings: base fee per gas is %.4f gwei, tip is %.6f gwei.\n", baseGasFloat, tipGasFloat)
+		fmt.Printf("Sending transaction with a base fee per gas of %.6f gwei for timely inclusion.\n\n", baseGasBoostedFloat)
 	}
 
 	nonce, err := getCurrentNonce(ctx, dataIn.Client, *dataIn.NodeAddress, dataIn.Ratelimit)
@@ -142,8 +142,8 @@ func BuildCall(ctx context.Context, logger *slog.Logger, dataIn DataIn) (*flashb
 		tipGasFloat, _ := new(big.Float).Quo(new(big.Float).SetInt(tipGas), new(big.Float).SetInt(big.NewInt(1e9))).Float64()
 		baseGasBoostedFloat, _ := new(big.Float).Quo(new(big.Float).SetInt(baseGasBoosted), new(big.Float).SetInt(big.NewInt(1e9))).Float64()
 
-		fmt.Printf("Current gas settings: base fee per gas is %.2f gwei, tip is %.2f gwei.\n", baseGasFloat, tipGasFloat)
-		fmt.Printf("Sending transaction with a base fee per gas of %.2f gwei for timely inclusion.\n\n", baseGasBoostedFloat)
+		fmt.Printf("Current gas settings: base fee per gas is %.6f gwei, tip is %.6f gwei.\n", baseGasFloat, tipGasFloat)
+		fmt.Printf("Sending transaction with a base fee per gas of %.6f gwei for timely inclusion.\n\n", baseGasBoostedFloat)
 	}
 
 	nonce, err := getCurrentNonce(ctx, dataIn.Client, *dataIn.NodeAddress, dataIn.Ratelimit)
