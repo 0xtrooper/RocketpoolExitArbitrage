@@ -17,6 +17,17 @@ func VerifyInputData(ctx context.Context, logger *slog.Logger, dataIn *DataIn) e
 	if dataIn.NodeAddress == nil {
 		verifyAllCallsFromNO = true
 	}
+	
+	if dataIn.TipOverwrite != nil {
+		if dataIn.TipOverwrite.Cmp(big.NewInt(0)) < 0 {
+			return errors.New("tip cannot be negative")
+		}
+		// make sure tip is somewhat reasonable, eg not have users confuse Gwei with wei
+		// Limit is set to 5 Gwei
+		if dataIn.TipOverwrite.Cmp(big.NewInt(5e9)) > 0 {
+			return errors.New("tip is too high, please use a lower value")
+		}
+	}
 
 	for _, minipoolAddress := range dataIn.MinipoolAddresses {
 		minipoolInstance, err := minipoolDelegate.NewMinipoolDelegate(minipoolAddress, dataIn.Client)

@@ -182,7 +182,7 @@ func estimateProfit(ctx context.Context, logger *slog.Logger, client *ethclient.
 		addresses[i] = minipool.WithdrawalAddress
 	}
 
-	uniswapData, paraswapData, err := arbitrage.CalcualteArbitrageData(
+	uniswapData, paraswapData, err := arbitrage.CalculateArbitrageData(
 		ctx,
 		logger,
 		client,
