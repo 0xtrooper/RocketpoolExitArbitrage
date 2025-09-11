@@ -178,10 +178,10 @@ func NewClient(logger *slog.Logger, ethRpc *ethclient.Client, searcherSecret *ec
 }
 
 func (client *FlashbotsClient) Call(method string, params ...interface{}) (json.RawMessage, error) {
-	return client.CallWithAditionalHeaders(method, map[string]string{}, params...)
+	return client.CallWithAdditionalHeaders(method, map[string]string{}, params...)
 }
 
-func (client *FlashbotsClient) CallWithAditionalHeaders(method string, headers map[string]string, params ...interface{}) (json.RawMessage, error) {
+func (client *FlashbotsClient) CallWithAdditionalHeaders(method string, headers map[string]string, params ...interface{}) (json.RawMessage, error) {
 	request := Request{
 		ID:      client.getNextRequestId(),
 		JSONRPC: "2.0",
