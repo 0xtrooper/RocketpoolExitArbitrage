@@ -475,6 +475,20 @@ Notice: When using a free RPC connection, consider setting a rate limit to avoid
 
 ---
 
+## Maximum Attempts
+
+- **Flag:** `--max-attempts`
+  **Type:** `int`
+  **Default:** `3`
+  **Description:** Maximum number of attempts to get the bundle included. If an attempt fails, the CLI retries until it reaches this limit, then exits with an error.
+  **Example**
+
+  ```bash
+  ./distribute --max-attempts=5
+  ```
+
+---
+
 ## Profit Checks
 
 - **Flag**: `--check-profit`  
