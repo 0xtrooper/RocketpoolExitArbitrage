@@ -475,7 +475,7 @@ func CalculateArbitrageData(
 			if errors.Is(err, uniswap.ErrPriceLimitExceeded) {
 				return nil, nil, errors.New("uniswap liquidity exceeded. Try with a smaller amount or use \"--protocol paraswap\"")
 			} else {
-				return nil, nil, errors.New("uniswap liquidity exceeded. Try with a smaller amount or use \"--protocol paraswap\"")
+				return nil, nil, errors.Join(errors.New("failed to get best uniswap pool"), err)
 			}
 		}
 
