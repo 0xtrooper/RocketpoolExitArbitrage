@@ -68,28 +68,34 @@ func GetBestPool(
 		limit = big.NewInt(0)
 	}
 
-	poolAAmountIn, err := getExactOutput(ctx, client, zeroForOne, amount, big.NewInt(100), limit, ratelimit)
-	if err != nil {
-		return common.Address{}, nil, nil, errors.Join(errors.New("failed to get pool A"), err)
-	}
+	poolAAmountIn, errPoolA := getExactOutput(ctx, client, zeroForOne, amount, big.NewInt(100), limit, ratelimit)
+	poolBAmountIn, errPoolB := getExactOutput(ctx, client, zeroForOne, amount, big.NewInt(500), limit, ratelimit)
 
-	if logger != nil && logger.Enabled(ctx, slog.LevelDebug) {
+	if errPoolA == nil && logger != nil && logger.Enabled(ctx, slog.LevelDebug) {
 		poolAAmountFloat, _ := new(big.Float).Quo(new(big.Float).SetInt(poolAAmountIn), new(big.Float).SetInt(big.NewInt(1e18))).Float64()
-		logger.Debug("0.01 percent pool", slog.String("address", PoolB), slog.Float64("Amount In", poolAAmountFloat))
+		logger.Debug("0.01 percent pool", slog.String("address", PoolA), slog.Float64("Amount In", poolAAmountFloat))
 	}
 
-	poolBAmountIn, err := getExactOutput(ctx, client, zeroForOne, amount, big.NewInt(500), limit, ratelimit)
-	if err != nil {
-		// the pool B has a rather low liquidity - 200k USD per side as of 10.01.2025
-		// if we get an error this is probably cause by the low liquidity
-		// therefor we only log it as a warning and default back to pool A
-		logger.Debug("failed to get uniswap estimation - possible too low liquidty", slog.String("pool", PoolB))
-		return common.HexToAddress(PoolA), poolAAmountIn, limit, nil
-	}
-
-	if logger != nil && logger.Enabled(ctx, slog.LevelDebug) {
+	if errPoolB == nil && logger != nil && logger.Enabled(ctx, slog.LevelDebug) {
 		poolBAmountInFloat, _ := new(big.Float).Quo(new(big.Float).SetInt(poolBAmountIn), new(big.Float).SetInt(big.NewInt(1e18))).Float64()
-		logger.Debug("0.05 percent pool", slog.String("address", PoolA), slog.Float64("Amount In", poolBAmountInFloat))
+		logger.Debug("0.05 percent pool", slog.String("address", PoolB), slog.Float64("Amount In", poolBAmountInFloat))
+	}
+
+	// handle errors
+	if errPoolA != nil && errPoolB != nil {
+		return common.Address{}, nil, nil, fmt.Errorf("both pools returned error: pool 0.01 percent: %v, pool 0.05 percent: %v", errPoolA, errPoolB)
+	}
+	if errPoolA != nil {
+		if logger != nil {
+			logger.Warn("0.01 percent pool returned error, using 0.05 percent pool", slog.String("address", PoolA), slog.String("error", errPoolA.Error()))
+		}
+		return common.HexToAddress(PoolB), poolBAmountIn, limit, nil
+	}
+	if errPoolB != nil {
+		if logger != nil {
+			logger.Warn("0.05 percent pool returned error, using 0.01 percent pool", slog.String("address", PoolB), slog.String("error", errPoolB.Error()))
+		}
+		return common.HexToAddress(PoolA), poolAAmountIn, limit, nil
 	}
 
 	// return pool with lowest amount in
