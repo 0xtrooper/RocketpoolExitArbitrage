@@ -9,6 +9,7 @@ import (
 	"log"
 	"math/big"
 	"os"
+	"rocketpoolArbitrage/flashbots"
 	"rocketpoolArbitrage/rocketpoolContracts/storage"
 	"strings"
 	"time"
@@ -16,7 +17,6 @@ import (
 
 	"log/slog"
 
-	"github.com/0xtrooper/flashbots_client"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -77,7 +77,7 @@ func ExecuteDistribute(ctx context.Context, logger *slog.Logger, dataIn *DataIn)
 	}
 
 	// build bundle
-	var bundle *flashbots_client.Bundle
+	var bundle *flashbots.Bundle
 	var rethToBurn, rETHShare, expectedProfit *big.Int
 	if dataIn.LocalReth {
 		bundle, rethToBurn, rETHShare, err = BuildCallLocalReth(ctx, logger, *dataIn)
@@ -233,7 +233,7 @@ func ExecuteDistribute(ctx context.Context, logger *slog.Logger, dataIn *DataIn)
 	return nil
 }
 
-func evalGasPrices(bundle *flashbots_client.Bundle) (bundleGasPrice, arbitrageGasPrice *big.Int) {
+func evalGasPrices(bundle *flashbots.Bundle) (bundleGasPrice, arbitrageGasPrice *big.Int) {
 	bundleGasPrice = bundle.MaximumGasFeePaid()
 
 	txs := bundle.Transactions()
@@ -299,7 +299,7 @@ func getWithdrawalAddress(ctx context.Context, client *ethclient.Client, network
 	return address, nil
 }
 
-func simulateBundle(logger *slog.Logger, dataIn *DataIn, bundle *flashbots_client.Bundle) (bool, common.Hash, common.Hash, error) {
+func simulateBundle(logger *slog.Logger, dataIn *DataIn, bundle *flashbots.Bundle) (bool, common.Hash, common.Hash, error) {
 	simulationStateBlock, err := dataIn.Client.BlockNumber(context.Background())
 	if err != nil {
 		return false, common.Hash{}, common.Hash{}, errors.Join(errors.New("failed to get block number"), err)

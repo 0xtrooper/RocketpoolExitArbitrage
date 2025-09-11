@@ -3,7 +3,6 @@ module rocketpoolArbitrage
 go 1.25.1
 
 require (
-	github.com/0xtrooper/flashbots_client v0.3.1
 	github.com/ethereum/go-ethereum v1.16.3
 	golang.org/x/sync v0.17.0
 )
@@ -19,7 +18,7 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/ethereum/go-verkle v0.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
-	github.com/google/uuid v1.6.0 // indirect
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/holiman/uint256 v1.3.2 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
@@ -32,8 +31,8 @@ require (
 )
 
 require (
-	github.com/crate-crypto/go-eth-kzg v1.3.0 // indirect
-	github.com/ethereum/c-kzg-4844/v2 v2.1.0 // indirect
+	github.com/crate-crypto/go-eth-kzg v1.4.0 // indirect
+	github.com/ethereum/c-kzg-4844/v2 v2.1.2 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect

@@ -9,9 +9,9 @@ import (
 	"log/slog"
 	"math/big"
 	"rocketpoolArbitrage/arbitrage"
+	"rocketpoolArbitrage/flashbots"
 	"strings"
 
-	"github.com/0xtrooper/flashbots_client"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -159,7 +159,7 @@ func parseInput(ctx context.Context, logger *slog.Logger) (data *arbitrage.DataI
 	}
 
 	logger.Debug("parsed ECDSA private key")
-	data.FbClient, err = flashbots_client.NewClient(logger, data.Client, privateKey)
+	data.FbClient, err = flashbots.NewClient(logger, data.Client, privateKey)
 	if err != nil {
 		return nil, errors.Join(errors.New("failed to create flashbots client"), err)
 	}
