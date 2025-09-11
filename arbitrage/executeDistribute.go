@@ -203,7 +203,13 @@ func ExecuteDistribute(ctx context.Context, logger *slog.Logger, dataIn *DataIn)
 		return errors.Join(errors.New("failed to wait for bundle inclusion"), err)
 	}
 
-	if !successfullyIncluded {
+	// try again up to max attempts
+	if !successfullyIncluded && dataIn.MaxAttempts > 1 {
+		fmt.Println(string(colorRed), "Error: Bundle was not included in the mempool.", string(colorReset))
+		fmt.Printf("This can happen at times of high activity. Retrying up to %d more times.\n", dataIn.MaxAttempts-1)
+		dataIn.MaxAttempts -= 1
+		return ExecuteDistribute(ctx, logger, dataIn)
+	} else {
 		fmt.Println(string(colorRed), "Error: Bundle was not included in the mempool.", string(colorReset))
 		fmt.Println("This can happen at times of high activity. Please try again later.")
 		fmt.Println("If the issue keeps happening, consider raising a github issue.")

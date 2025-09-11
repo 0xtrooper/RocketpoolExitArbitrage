@@ -37,6 +37,7 @@ type DataIn struct {
 	Protocol                        Protocol
 	NetworkId                       uint64
 	TipOverwrite                    *big.Int
+	MaxAttempts                     int
 }
 
 type UniswapArbitrage struct {
