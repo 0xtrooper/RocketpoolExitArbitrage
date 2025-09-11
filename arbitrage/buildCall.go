@@ -180,19 +180,28 @@ func BuildCall(ctx context.Context, logger *slog.Logger, dataIn DataIn) (*flashb
 		return nil, nil, errors.Join(errors.New("failed to calculate arbitrage data"), err)
 	}
 
-	disributeFee := len(dataIn.MinipoolAddresses) * DISTRIBUTE_CALL_MAX_GAS
+	distributeFee := len(dataIn.MinipoolAddresses) * DISTRIBUTE_CALL_MAX_GAS
 
+	// handle nil data - if it is required, abort this attempt
 	if uniswapData != nil {
-		uniswapData.expectedFee = disributeFee + ARBITRAGE_UNISWAP_CALL_MAX_GAS
+		uniswapData.expectedFee = distributeFee + ARBITRAGE_UNISWAP_CALL_MAX_GAS
 		uniswapData.expectedProfitAfterFees = new(big.Int).Sub(uniswapData.expectedProfit, big.NewInt(int64(uniswapData.expectedFee)))
+	} else if dataIn.Protocol == UniswapProtocol || dataIn.Protocol == BestProtocol {
+		return nil, nil, errors.New("uniswap arbitrage data could not be calculated, no arbitrage will be performed.\nTry again or use --protocol paraswap")
 	} else {
 		uniswapData = &UniswapArbitrage{
 			expectedProfitAfterFees: big.NewInt(0),
 		}
 	}
 	if paraswapData != nil {
-		paraswapData.expectedFee = disributeFee + ARBITRAGE_PARASWAP_CALL_MAX_GAS
+		paraswapData.expectedFee = distributeFee + ARBITRAGE_PARASWAP_CALL_MAX_GAS
 		paraswapData.expectedProfitAfterFees = new(big.Int).Sub(paraswapData.expectedProfit, big.NewInt(int64(paraswapData.expectedFee)))
+	} else if dataIn.Protocol == ParaswapProtocol || dataIn.Protocol == BestProtocol {
+		return nil, nil, errors.New("paraswap arbitrage data could not be calculated, no arbitrage will be performed.\nTry again or use --protocol uniswap")
+	} else {
+		paraswapData = &ParaswapArbitrage{
+			expectedProfitAfterFees: big.NewInt(0),
+		}
 	}
 
 	uniswapIsBetter := uniswapData.expectedProfitAfterFees.Cmp(paraswapData.expectedProfitAfterFees) >= 0
@@ -458,10 +467,15 @@ func CalculateArbitrageData(
 	if protocol == UniswapProtocol || protocol == BestProtocol {
 		poolAddress, uniswapReturnAmountWeth, sqrtPriceLimitX96, err := uniswap.GetBestPoolWithdrawArb(ctx, logger, networkId, client, rethToBurn, primaryRatio, ratelimit)
 		if err != nil {
+			if protocol == BestProtocol {
+				fmt.Printf("Uniswap failed, proceeding with paraswap: %s\n", err.Error())
+				return nil, dataParaswap, nil
+			}
+
 			if errors.Is(err, uniswap.ErrPriceLimitExceeded) {
 				return nil, nil, errors.New("uniswap liquidity exceeded. Try with a smaller amount or use \"--protocol paraswap\"")
 			} else {
-				return nil, nil, errors.Join(errors.New("failed to get best uniswap pool"), err)
+				return nil, nil, errors.New("uniswap liquidity exceeded. Try with a smaller amount or use \"--protocol paraswap\"")
 			}
 		}
 
