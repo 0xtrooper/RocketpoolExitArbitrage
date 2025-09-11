@@ -165,7 +165,14 @@ func ExecuteDistribute(ctx context.Context, logger *slog.Logger, dataIn *DataIn)
 
 	// end the attempt if the simulation failed - after printing the dryrun if it was requested!
 	if !success {
-		return errors.New("bundle simulation failed")
+		if dataIn.MaxAttempts > 1 {
+			fmt.Println(string(colorRed), "Error: Bundle simulation failed.", string(colorReset))
+			fmt.Printf("This can happen at times of high activity. Retrying up to %d more times.\n", dataIn.MaxAttempts-1)
+			dataIn.MaxAttempts -= 1
+			return ExecuteDistribute(ctx, logger, dataIn)
+		} else {
+			return errors.New("bundle simulation failed")
+		}
 	}
 
 	// this checks if a bundle makes sense to make arbitrage profits
@@ -203,11 +210,19 @@ func ExecuteDistribute(ctx context.Context, logger *slog.Logger, dataIn *DataIn)
 		return errors.Join(errors.New("failed to wait for bundle inclusion"), err)
 	}
 
+	// try again up to max attempts
 	if !successfullyIncluded {
-		fmt.Println(string(colorRed), "Error: Bundle was not included in the mempool.", string(colorReset))
-		fmt.Println("This can happen at times of high activity. Please try again later.")
-		fmt.Println("If the issue keeps happening, consider raising a github issue.")
-		return nil
+		if dataIn.MaxAttempts > 1 {
+			fmt.Println(string(colorRed), "Error: Bundle was not included in the mempool.", string(colorReset))
+			fmt.Printf("This can happen at times of high activity. Retrying up to %d more times.\n", dataIn.MaxAttempts-1)
+			dataIn.MaxAttempts -= 1
+			return ExecuteDistribute(ctx, logger, dataIn)
+		} else {
+			fmt.Println(string(colorRed), "Error: Bundle was not included in the mempool.", string(colorReset))
+			fmt.Println("This can happen at times of high activity. Please try again later.")
+			fmt.Println("If the issue keeps happening, consider raising a github issue.")
+			return nil
+		}
 	}
 
 	// print successful inclusion and tx link

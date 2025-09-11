@@ -68,6 +68,7 @@ func parseInput(ctx context.Context, logger *slog.Logger) (data *arbitrage.DataI
 		"Private key for the node address used as caller. This can be used if the script should not use the RP daemon to sign transactions. (e.g. when using Allnode)",
 	)
 	ratelimitFlag := flag.Int("ratelimit", 0, "Rate limit in milliseconds between each minipool distribution call. (default: 0)")
+	maxAttemptsFlag := flag.Int("max-attempts", 3, "Maximum attempts to distribute per minipool. (default: 3)")
 
 	flag.Parse()
 
@@ -256,6 +257,12 @@ func parseInput(ctx context.Context, logger *slog.Logger) (data *arbitrage.DataI
 
 	data.Ratelimit = *ratelimitFlag
 	logger.Debug("ratelimit", slog.Int("ratelimit", data.Ratelimit))
+
+	data.MaxAttempts = *maxAttemptsFlag
+	if data.MaxAttempts < 1 {
+		return nil, errors.New("max-attempts must be at least 1")
+	}
+	logger.Debug("maxAttempts", slog.Int("maxAttempts", data.MaxAttempts))
 
 	return data, nil
 }
