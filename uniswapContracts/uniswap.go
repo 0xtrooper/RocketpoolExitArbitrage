@@ -86,11 +86,15 @@ func GetBestPool(
 		return common.Address{}, nil, nil, fmt.Errorf("both pools returned error: pool 0.01 percent: %v, pool 0.05 percent: %v", errPoolA, errPoolB)
 	}
 	if errPoolA != nil {
-		logger.Warn("0.01 percent pool returned error, using 0.05 percent pool", slog.String("address", PoolA), slog.String("error", errPoolA.Error()))
+		if logger != nil {
+			logger.Warn("0.01 percent pool returned error, using 0.05 percent pool", slog.String("address", PoolA), slog.String("error", errPoolA.Error()))
+		}
 		return common.HexToAddress(PoolB), poolBAmountIn, limit, nil
 	}
 	if errPoolB != nil {
-		logger.Warn("0.05 percent pool returned error, using 0.01 percent pool", slog.String("address", PoolB), slog.String("error", errPoolB.Error()))
+		if logger != nil {
+			logger.Warn("0.05 percent pool returned error, using 0.01 percent pool", slog.String("address", PoolB), slog.String("error", errPoolB.Error()))
+		}
 		return common.HexToAddress(PoolA), poolAAmountIn, limit, nil
 	}
 
