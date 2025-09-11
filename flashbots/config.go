@@ -1,6 +1,6 @@
 package flashbots
 
-type FlasbotsNetork string
+type FlashbotsNetwork string
 
 var FlashbotsUrlPerNetwork = map[uint64]string{
 	1:        "https://relay.flashbots.net",
