@@ -180,19 +180,28 @@ func BuildCall(ctx context.Context, logger *slog.Logger, dataIn DataIn) (*flashb
 		return nil, nil, errors.Join(errors.New("failed to calculate arbitrage data"), err)
 	}
 
-	disributeFee := len(dataIn.MinipoolAddresses) * DISTRIBUTE_CALL_MAX_GAS
+	distributeFee := len(dataIn.MinipoolAddresses) * DISTRIBUTE_CALL_MAX_GAS
 
+	// handle nil data - if it is required, abort this attempt
 	if uniswapData != nil {
-		uniswapData.expectedFee = disributeFee + ARBITRAGE_UNISWAP_CALL_MAX_GAS
+		uniswapData.expectedFee = distributeFee + ARBITRAGE_UNISWAP_CALL_MAX_GAS
 		uniswapData.expectedProfitAfterFees = new(big.Int).Sub(uniswapData.expectedProfit, big.NewInt(int64(uniswapData.expectedFee)))
+	} else if dataIn.Protocol == UniswapProtocol || dataIn.Protocol == BestProtocol {
+		return nil, nil, errors.New("uniswap arbitrage data could not be calculated, no arbitrage will be performed.\nTry again or use --protocol paraswap")
 	} else {
 		uniswapData = &UniswapArbitrage{
 			expectedProfitAfterFees: big.NewInt(0),
 		}
 	}
 	if paraswapData != nil {
-		paraswapData.expectedFee = disributeFee + ARBITRAGE_PARASWAP_CALL_MAX_GAS
+		paraswapData.expectedFee = distributeFee + ARBITRAGE_PARASWAP_CALL_MAX_GAS
 		paraswapData.expectedProfitAfterFees = new(big.Int).Sub(paraswapData.expectedProfit, big.NewInt(int64(paraswapData.expectedFee)))
+	} else if dataIn.Protocol == ParaswapProtocol || dataIn.Protocol == BestProtocol {
+		return nil, nil, errors.New("paraswap arbitrage data could not be calculated, no arbitrage will be performed.\nTry again or use --protocol uniswap")
+	} else {
+		paraswapData = &ParaswapArbitrage{
+			expectedProfitAfterFees: big.NewInt(0),
+		}
 	}
 
 	uniswapIsBetter := uniswapData.expectedProfitAfterFees.Cmp(paraswapData.expectedProfitAfterFees) >= 0
@@ -406,7 +415,7 @@ func CalculateArbitrageData(
 	dryRun bool,
 	ratelimit int,
 	protocol Protocol,
-) (*UniswapArbitrage, *ParaswapArbitrage, error) {
+) (dataUniswap *UniswapArbitrage, dataParaswap *ParaswapArbitrage, err error) {
 	rEthContractAddress, err := GetREthContractAddress(networkId)
 	if err != nil {
 		return nil, nil, errors.Join(errors.New("failed to get rETH contract address"), err)
@@ -444,51 +453,54 @@ func CalculateArbitrageData(
 	logger.Debug("calculated rETH to burn", slog.String("rethToBurn", rethToBurn.String()))
 
 	// fetch paraswap data
-	dataParaswap, err := fetchParaswapData(ctx, logger, rethToBurn, senderAddress, rEthContractAddress, networkId)
-	if err != nil {
-		return nil, nil, errors.Join(errors.New("failed to fetch paraswap data"), err)
+	if protocol == ParaswapProtocol || protocol == BestProtocol {
+		dataParaswap, err = fetchParaswapData(ctx, logger, rethToBurn, senderAddress, rEthContractAddress, networkId)
+		if err != nil {
+			return nil, nil, errors.Join(errors.New("failed to fetch paraswap data"), err)
+		}
+		dataParaswap.expectedProfit = new(big.Int).Sub(rETHShare, dataParaswap.swapInAmountWeth)
 	}
-
-	dataParaswap.expectedProfit = new(big.Int).Sub(rETHShare, dataParaswap.swapInAmountWeth)
 
 	primaryRatio := new(big.Float).Quo(new(big.Float).SetInt(rETHShare), new(big.Float).SetInt(rethToBurn))
 
 	// get best pool to swap rETH
-	poolAddress, uniswapReturnAmountWeth, sqrtPriceLimitX96, err := uniswap.GetBestPoolWithdrawArb(ctx, logger, networkId, client, rethToBurn, primaryRatio, ratelimit)
-	if err != nil {
-		if errors.Is(err, uniswap.ErrPriceLimitExceeded) {
-			if protocol == ParaswapProtocol {
+	if protocol == UniswapProtocol || protocol == BestProtocol {
+		poolAddress, uniswapReturnAmountWeth, sqrtPriceLimitX96, err := uniswap.GetBestPoolWithdrawArb(ctx, logger, networkId, client, rethToBurn, primaryRatio, ratelimit)
+		if err != nil {
+			if protocol == BestProtocol {
+				fmt.Printf("Uniswap failed, proceeding with paraswap: %s\n", err.Error())
 				return nil, dataParaswap, nil
-			} else {
-				return nil, nil, errors.New("uniswap liquidity exceeded. Try with a smaller amount or use \"--protocol paraswap\"")
 			}
-		} else {
-			return nil, nil, errors.Join(errors.New("failed to get best pool"), err)
+
+			if errors.Is(err, uniswap.ErrPriceLimitExceeded) {
+				return nil, nil, errors.New("uniswap liquidity exceeded. Try with a smaller amount or use \"--protocol paraswap\"")
+			} else {
+				return nil, nil, errors.Join(errors.New("failed to get best uniswap pool"), err)
+			}
+		}
+
+		if logger.Enabled(ctx, slog.LevelInfo) {
+			rethToBurnFloat, _ := new(big.Float).Quo(new(big.Float).SetInt(rethToBurn), new(big.Float).SetInt(big.NewInt(1e18))).Float64()
+			ethUnlockedFloat, _ := new(big.Float).Quo(new(big.Float).SetInt(rETHShare), new(big.Float).SetInt(big.NewInt(1e18))).Float64()
+			primaryRatio := ethUnlockedFloat / rethToBurnFloat
+
+			// update user about the primary ratio
+			fmt.Printf("Calculated rETH to burn: Burning %.6f rETH for %.6f ETH at a primary ratio of %.5f.\n\n",
+				rethToBurnFloat,
+				ethUnlockedFloat,
+				primaryRatio,
+			)
+		}
+
+		uniswapReturnAmountWeth = new(big.Int).Sub(uniswapReturnAmountWeth, big.NewInt(5))
+		dataUniswap = &UniswapArbitrage{
+			poolAddress:       poolAddress,
+			swapInAmountWeth:  uniswapReturnAmountWeth,
+			swapOutAmountReth: rethToBurn,
+			sqrtPriceLimitX96: sqrtPriceLimitX96,
+			expectedProfit:    new(big.Int).Sub(rETHShare, uniswapReturnAmountWeth),
 		}
 	}
-
-	if logger.Enabled(ctx, slog.LevelInfo) {
-		rethToBurnFloat, _ := new(big.Float).Quo(new(big.Float).SetInt(rethToBurn), new(big.Float).SetInt(big.NewInt(1e18))).Float64()
-		ethUnlockedFloat, _ := new(big.Float).Quo(new(big.Float).SetInt(rETHShare), new(big.Float).SetInt(big.NewInt(1e18))).Float64()
-		primaryRatio := ethUnlockedFloat / rethToBurnFloat
-
-		// update user about the primary ratio
-		fmt.Printf("Calculated rETH to burn: Burning %.6f rETH for %.6f ETH at a primary ratio of %.5f.\n\n",
-			rethToBurnFloat,
-			ethUnlockedFloat,
-			primaryRatio,
-		)
-	}
-
-	uniswapReturnAmountWeth = new(big.Int).Sub(uniswapReturnAmountWeth, big.NewInt(5))
-	dataUniswap := &UniswapArbitrage{
-		poolAddress:       poolAddress,
-		swapInAmountWeth:  uniswapReturnAmountWeth,
-		swapOutAmountReth: rethToBurn,
-		sqrtPriceLimitX96: sqrtPriceLimitX96,
-		expectedProfit:    new(big.Int).Sub(rETHShare, uniswapReturnAmountWeth),
-	}
-
 	return dataUniswap, dataParaswap, nil
 }
 
