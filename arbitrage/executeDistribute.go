@@ -212,7 +212,7 @@ func ExecuteDistribute(ctx context.Context, logger *slog.Logger, dataIn *DataIn)
 
 	// try again up to max attempts
 	if !successfullyIncluded {
-		if dataIn.MaxAttempts <= 1 {
+		if dataIn.MaxAttempts > 1 {
 			fmt.Println(string(colorRed), "Error: Bundle was not included in the mempool.", string(colorReset))
 			fmt.Printf("This can happen at times of high activity. Retrying up to %d more times.\n", dataIn.MaxAttempts-1)
 			dataIn.MaxAttempts -= 1
