@@ -111,7 +111,7 @@ type FlashbotsClient struct {
 }
 
 func NewClientRpcString(logger *slog.Logger, ethRpcStr string, searcherSecret *ecdsa.PrivateKey) (*FlashbotsClient, error) {
-	if ethRpcStr != "" {
+	if ethRpcStr == "" {
 		return nil, errors.New("ethRpc is required")
 	}
 
