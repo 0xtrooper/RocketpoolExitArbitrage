@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 
-	"github.com/0xtrooper/flashbots_client"
+	"rocketpoolArbitrage/flashbots"
 )
 
 type Protocol string
@@ -27,7 +27,7 @@ type DataIn struct {
 	NodeAddress                     *common.Address
 	ReceiverAddress                 *common.Address
 	Client                          *ethclient.Client
-	FbClient                        *flashbots_client.FlashbotsClient
+	FbClient                        *flashbots.FlashbotsClient
 	RandomPrivateKey                bool
 	SkipConfirmation                bool
 	CheckProfit                     bool

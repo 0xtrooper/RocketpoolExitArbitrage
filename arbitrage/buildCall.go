@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os/exec"
 	"rocketpoolArbitrage/arbitrage/contract"
+	"rocketpoolArbitrage/flashbots"
 	"rocketpoolArbitrage/rocketpoolContracts/minipoolDelegate"
 	"rocketpoolArbitrage/rocketpoolContracts/rETH"
 	uniswap "rocketpoolArbitrage/uniswapContracts"
@@ -25,8 +26,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"golang.org/x/sync/errgroup"
-
-	"github.com/0xtrooper/flashbots_client"
 )
 
 const (
@@ -36,7 +35,7 @@ const (
 	ARBITRAGE_PARASWAP_CALL_MAX_GAS = 750000 // in case there is a complicated path, reserve more gas
 )
 
-func BuildCallLocalReth(ctx context.Context, logger *slog.Logger, dataIn DataIn) (*flashbots_client.Bundle, *big.Int, *big.Int, error) {
+func BuildCallLocalReth(ctx context.Context, logger *slog.Logger, dataIn DataIn) (*flashbots.Bundle, *big.Int, *big.Int, error) {
 	logger.With(slog.String("function", "BuildCallLocalReth"))
 
 	baseGas, tipGas, err := getCurrentGasSettings(ctx, dataIn.Client, dataIn.Ratelimit)
@@ -122,12 +121,12 @@ func BuildCallLocalReth(ctx context.Context, logger *slog.Logger, dataIn DataIn)
 	if dataIn.Ratelimit > 0 {
 		time.Sleep(time.Duration(dataIn.Ratelimit*4) * time.Millisecond)
 	}
-	bundle := flashbots_client.NewBundleWithTransactions(txs)
+	bundle := flashbots.NewBundleWithTransactions(txs)
 
 	return bundle, rethToBurn, rETHShare, nil
 }
 
-func BuildCall(ctx context.Context, logger *slog.Logger, dataIn DataIn) (*flashbots_client.Bundle, *big.Int, error) {
+func BuildCall(ctx context.Context, logger *slog.Logger, dataIn DataIn) (*flashbots.Bundle, *big.Int, error) {
 	logger.With(slog.String("function", "BuildCall"))
 
 	baseGas, tipGas, err := getCurrentGasSettings(ctx, dataIn.Client, dataIn.Ratelimit)
@@ -341,7 +340,7 @@ func BuildCall(ctx context.Context, logger *slog.Logger, dataIn DataIn) (*flashb
 	if dataIn.Ratelimit > 0 {
 		time.Sleep(time.Duration(dataIn.Ratelimit*4) * time.Millisecond)
 	}
-	bundle := flashbots_client.NewBundleWithTransactions(txs)
+	bundle := flashbots.NewBundleWithTransactions(txs)
 
 	return bundle, expectedProfit, nil
 }
