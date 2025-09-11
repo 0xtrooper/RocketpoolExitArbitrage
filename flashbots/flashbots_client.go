@@ -485,7 +485,7 @@ func (client *FlashbotsClient) GetBundleStatsV2(bundle *Bundle) (*BundleStatsV2,
 	}
 
 	if bundle.isSmart {
-		return nil, errors.New("smart bundles are not supportedb by 'GetBundleStatsV2', use 'GetSbundleStats'")
+		return nil, errors.New("smart bundles are not supported by 'GetBundleStatsV2', use 'GetSbundleStats'")
 	}
 
 	params := map[string]interface{}{
